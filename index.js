@@ -102,3 +102,6 @@ app.listen(port, async () => {
   await connectToDatabase();
   console.log(`Server is running on http://localhost:${port}`);
 });
+app.get('/',async(req,res)=>{
+    res.send("Copy and Paste /airport?iata_code=HYD in hosted url")
+})

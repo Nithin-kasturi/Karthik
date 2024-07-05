@@ -5,7 +5,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const mongoURI = process.env.MONGODB_CONNECT_URI;
-const client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+const client = new MongoClient(mongoURI);
 
 let database;
 

@@ -93,7 +93,7 @@ app.get('/airport', async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error('Error fetching data:', error);
-    res.status(500).send('Internal server error');
+    res.status(500).send(error);
   }
 });
 

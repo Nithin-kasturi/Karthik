@@ -1,6 +1,7 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -23,8 +24,16 @@ async function connectToDatabase() {
   }
 }
 
+// Middleware to check database connection
+function ensureDbConnection(req, res, next) {
+  if (!database) {
+    return res.status(500).send('Database connection not established');
+  }
+  next();
+}
+
 // Define the GET endpoint
-app.get('/airport', async (req, res) => {
+app.get('/airport', ensureDbConnection, async (req, res) => {
   const iata_code = req.query.iata_code;
 
   if (!iata_code) {
@@ -36,7 +45,7 @@ app.get('/airport', async (req, res) => {
     const cityCollection = database.collection('city');
     const countryCollection = database.collection('country');
     const airport = await collection.findOne({ iata_code });
-    
+
     if (!airport) {
       return res.status(404).send('Airport not found');
     }
@@ -60,7 +69,7 @@ app.get('/airport', async (req, res) => {
 
         // Find country data by country_id from city_data
         const country_data = await countryCollection.findOne({ id: city_data.country_id });
-        console.log(country_data)
+        
         if (country_data) {
           country_data1 = {
             id: country_data.id,
@@ -70,7 +79,6 @@ app.get('/airport', async (req, res) => {
             mobile_code: country_data.mobile_code,
             continent_id: country_data.continent_id
           };
-          console.log(country_data1)
         }
       }
     }
@@ -97,11 +105,16 @@ app.get('/airport', async (req, res) => {
   }
 });
 
-// Start the server and connect to the database
-app.listen(port, async () => {
-  await connectToDatabase();
-  console.log(`Server is running on http://localhost:${port}`);
+// Default route
+app.get('/', (req, res) => {
+  res.send("Copy and Paste /airport?iata_code=HYD in hosted URL");
 });
-app.get('/',async(req,res)=>{
-    res.send("Copy and Paste /airport?iata_code=HYD in hosted url")
-})
+
+// Start the server after successful database connection
+connectToDatabase().then(() => {
+  app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+  });
+}).catch(err => {
+  console.error('Failed to connect to database:', err);
+});

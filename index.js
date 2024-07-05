@@ -1,14 +1,10 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
-
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Replace with your MongoDB Atlas connection string
 const mongoURI = process.env.MONGODB_CONNECT_URI;
-
-// Create a new MongoClient
 const client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 let database;
@@ -24,33 +20,20 @@ async function connectToDatabase() {
   }
 }
 
-// Middleware to check database connection
-function ensureDbConnection(req, res, next) {
-  if (!database) {
-    return res.status(500).send('Database connection not established');
-  }
-  next();
-}
-
-// Define the GET endpoint
-app.get('/airport', ensureDbConnection, async (req, res) => {
+app.get('/airport', async (req, res) => {
   const iata_code = req.query.iata_code;
 
   if (!iata_code) {
-    console.error('Missing iata_code parameter');
     return res.status(400).send('Missing iata_code parameter');
   }
 
   try {
-    console.log('Fetching airport data for IATA code:', iata_code);
-
     const collection = database.collection('data');
     const cityCollection = database.collection('city');
     const countryCollection = database.collection('country');
     const airport = await collection.findOne({ iata_code });
 
     if (!airport) {
-      console.error('Airport not found for IATA code:', iata_code);
       return res.status(404).send('Airport not found');
     }
 
@@ -58,8 +41,6 @@ app.get('/airport', ensureDbConnection, async (req, res) => {
     let country_data1 = { data: null };
 
     if (airport.city_id) {
-      console.log('Fetching city data for city_id:', airport.city_id);
-
       const city_data = await cityCollection.findOne({ id: airport.city_id });
 
       if (city_data) {
@@ -72,8 +53,6 @@ app.get('/airport', ensureDbConnection, async (req, res) => {
           long: city_data.long
         };
 
-        console.log('Fetching country data for country_id:', city_data.country_id);
-
         const country_data = await countryCollection.findOne({ id: city_data.country_id });
 
         if (country_data) {
@@ -85,11 +64,7 @@ app.get('/airport', ensureDbConnection, async (req, res) => {
             mobile_code: country_data.mobile_code,
             continent_id: country_data.continent_id
           };
-        } else {
-          console.error('Country data not found for country_id:', city_data.country_id);
         }
-      } else {
-        console.error('City data not found for city_id:', airport.city_id);
       }
     }
 
@@ -108,7 +83,6 @@ app.get('/airport', ensureDbConnection, async (req, res) => {
       }
     };
 
-    console.log('Sending response:', response);
     res.json(response);
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -116,16 +90,11 @@ app.get('/airport', ensureDbConnection, async (req, res) => {
   }
 });
 
-// Default route
-app.get('/', (req, res) => {
-  res.send("Copy and Paste /airport?iata_code=HYD in hosted URL");
+app.listen(port, async () => {
+  await connectToDatabase();
+  console.log(`Server is running on http://localhost:${port}`);
 });
 
-// Start the server after successful database connection
-connectToDatabase().then(() => {
-  app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-  });
-}).catch(err => {
-  console.error('Failed to connect to database:', err);
+app.get('/', (req, res) => {
+  res.send("Copy and Paste /airport?iata_code=HYD in hosted url");
 });

@@ -8,7 +8,7 @@ const mongoURI = process.env.MONGODB_CONNECT_URI;
 const client = new MongoClient(mongoURI);
 
 let database;
-//comment
+//comments 
 async function connectToDatabase() {
   try {
     await client.connect();
